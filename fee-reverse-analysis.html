@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reverse Fee Analysis - $75K Fee Composition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Reverse Fee Analysis</h1>
+        <p class="text-gray-600 mb-8">Finding possible transaction compositions that result in $75,000 in fees (through November)</p>
+
+        <!-- Key Insight Box -->
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-8">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-amber-800">Key Finding</h3>
+                    <p class="text-sm text-amber-700 mt-1">
+                        Your original estimate ($1.3M volume, 40K transactions) would only generate ~$57,500 in fees. 
+                        To reach $75K, either volume is higher (~$1.8M) or transactions are higher (~67K), or both.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">eClinicalWorks Pricing</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Percentage Rate</label>
+                    <div class="flex items-center">
+                        <input type="number" id="percentRate" value="3.5" step="0.1" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateAnalysis()">
+                        <span class="ml-2 text-gray-500">%</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Per-Transaction Fee</label>
+                    <div class="flex items-center">
+                        <span class="mr-2 text-gray-500">$</span>
+                        <input type="number" id="perTxFee" value="0.30" step="0.01" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateAnalysis()">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Fees Paid</label>
+                    <div class="flex items-center">
+                        <span class="mr-2 text-gray-500">$</span>
+                        <input type="number" id="totalFees" value="75000" step="1000" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateAnalysis()">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Time Period</label>
+                    <select id="timePeriod" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateAnalysis()">
+                        <option value="11">11 months (through Nov)</option>
+                        <option value="12">12 months (full year)</option>
+                        <option value="10">10 months</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenario Analysis -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Possible Compositions</h2>
+            <p class="text-gray-600 mb-4">Given the fee equation: <code class="bg-gray-100 px-2 py-1 rounded">Fees = (Volume × Rate%) + (Transactions × Per-Tx Fee)</code></p>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Scenario</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-700">Avg Ticket</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-700">Transactions</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-700">Volume</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-700">% Fee Portion</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-700">Per-Tx Portion</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-700">Effective Rate</th>
+                            <th class="px-4 py-3 text-center font-semibold text-gray-700">Likely?</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scenarioTable" class="divide-y divide-gray-200">
+                        <!-- Generated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Visual Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Volume vs Transactions Trade-off</h3>
+                <canvas id="tradeoffChart"></canvas>
+                <p class="text-xs text-gray-500 mt-2">Each point represents a valid combination that equals $75K in fees</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Fee Composition Breakdown</h3>
+                <canvas id="compositionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Interactive Solver -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Interactive Solver</h2>
+            <p class="text-gray-600 mb-4">Adjust one variable to see what the other must be:</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Fix Volume, Solve for Transactions -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-700 mb-3">If you know the Volume...</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Enter Volume ($)</label>
+                            <input type="number" id="knownVolume" value="1300000" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="solveForTransactions()">
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <div class="text-sm text-blue-600">Required Transactions:</div>
+                            <div class="text-2xl font-bold text-blue-800" id="solvedTransactions">-</div>
+                            <div class="text-sm text-blue-600 mt-1">Avg Ticket: <span id="solvedAvgTicket1">-</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Fix Transactions, Solve for Volume -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-700 mb-3">If you know the Transactions...</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Enter Transactions</label>
+                            <input type="number" id="knownTransactions" value="40000" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="solveForVolume()">
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg">
+                            <div class="text-sm text-green-600">Required Volume:</div>
+                            <div class="text-2xl font-bold text-green-800" id="solvedVolume">-</div>
+                            <div class="text-sm text-green-600 mt-1">Avg Ticket: <span id="solvedAvgTicket2">-</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Copay Mix Analysis -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Copay Mix Analysis</h2>
+            <p class="text-gray-600 mb-4">Given your fee total, what copay/full-charge mix makes sense?</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Copay Amount ($)</label>
+                    <input type="number" id="copayAmt" value="25" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateCopayAnalysis()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Charge Amount ($)</label>
+                    <input type="number" id="fullChargeAmt" value="250" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateCopayAnalysis()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Copay % (of transactions)</label>
+                    <input type="range" id="copayMixSlider" min="50" max="99" value="90" 
+                        class="w-full mt-2" oninput="updateCopayAnalysis()">
+                    <div class="text-center text-sm text-gray-600" id="copayMixLabel">90%</div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center" id="copayResults">
+                    <!-- Generated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Annualized Projections -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-6 text-white">
+            <h2 class="text-xl font-semibold mb-4">Annualized Projection</h2>
+            <p class="text-blue-100 mb-4">If $75K represents 11 months, here's your likely annual picture:</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white/20 rounded-lg p-4 text-center">
+                    <div class="text-sm text-blue-100">Annual Fees (projected)</div>
+                    <div class="text-2xl font-bold" id="annualFees">$81,818</div>
+                </div>
+                <div class="bg-white/20 rounded-lg p-4 text-center">
+                    <div class="text-sm text-blue-100">Annual Volume (est.)</div>
+                    <div class="text-2xl font-bold" id="annualVolume">$1.96M</div>
+                </div>
+                <div class="bg-white/20 rounded-lg p-4 text-center">
+                    <div class="text-sm text-blue-100">Annual Transactions (est.)</div>
+                    <div class="text-2xl font-bold" id="annualTx">43,636</div>
+                </div>
+                <div class="bg-white/20 rounded-lg p-4 text-center">
+                    <div class="text-sm text-blue-100">Effective Rate</div>
+                    <div class="text-2xl font-bold" id="annualRate">4.17%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tradeoffChart = null;
+        let compositionChart = null;
+
+        function getInputs() {
+            return {
+                percentRate: parseFloat(document.getElementById('percentRate').value) / 100,
+                perTxFee: parseFloat(document.getElementById('perTxFee').value),
+                totalFees: parseFloat(document.getElementById('totalFees').value),
+                timePeriod: parseInt(document.getElementById('timePeriod').value)
+            };
+        }
+
+        function formatCurrency(amount) {
+            if (amount >= 1000000) {
+                return '$' + (amount / 1000000).toFixed(2) + 'M';
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-US').format(Math.round(num));
+        }
+
+        // Given average ticket, solve for transactions and volume
+        function solveForAvgTicket(avgTicket, inputs) {
+            // Fees = V * rate + T * perTx
+            // V = T * avgTicket
+            // Fees = T * avgTicket * rate + T * perTx
+            // Fees = T * (avgTicket * rate + perTx)
+            // T = Fees / (avgTicket * rate + perTx)
+            
+            const T = inputs.totalFees / (avgTicket * inputs.percentRate + inputs.perTxFee);
+            const V = T * avgTicket;
+            
+            return { transactions: T, volume: V };
+        }
+
+        // Given volume, solve for transactions
+        function solveGivenVolume(volume, inputs) {
+            // Fees = V * rate + T * perTx
+            // T = (Fees - V * rate) / perTx
+            const percentPortion = volume * inputs.percentRate;
+            const T = (inputs.totalFees - percentPortion) / inputs.perTxFee;
+            return T;
+        }
+
+        // Given transactions, solve for volume
+        function solveGivenTransactions(transactions, inputs) {
+            // Fees = V * rate + T * perTx
+            // V = (Fees - T * perTx) / rate
+            const txPortion = transactions * inputs.perTxFee;
+            const V = (inputs.totalFees - txPortion) / inputs.percentRate;
+            return V;
+        }
+
+        function updateAnalysis() {
+            const inputs = getInputs();
+            
+            // Define scenarios with different average tickets
+            const scenarios = [
+                { name: "All Copays ($25)", avgTicket: 25, highlight: false },
+                { name: "95% Copay Mix", avgTicket: 25 * 0.95 + 250 * 0.05, highlight: false },
+                { name: "90% Copay Mix", avgTicket: 25 * 0.90 + 250 * 0.10, highlight: true },
+                { name: "85% Copay Mix", avgTicket: 25 * 0.85 + 250 * 0.15, highlight: false },
+                { name: "80% Copay Mix", avgTicket: 25 * 0.80 + 250 * 0.20, highlight: false },
+                { name: "75% Copay Mix", avgTicket: 25 * 0.75 + 250 * 0.25, highlight: false },
+                { name: "Original Estimate ($32.50)", avgTicket: 32.50, highlight: true },
+                { name: "Higher Ticket ($45)", avgTicket: 45, highlight: false },
+                { name: "Higher Ticket ($50)", avgTicket: 50, highlight: false },
+            ];
+            
+            const tableBody = document.getElementById('scenarioTable');
+            tableBody.innerHTML = scenarios.map(scenario => {
+                const result = solveForAvgTicket(scenario.avgTicket, inputs);
+                const percentPortion = result.volume * inputs.percentRate;
+                const txPortion = result.transactions * inputs.perTxFee;
+                const effectiveRate = inputs.totalFees / result.volume * 100;
+                
+                // Determine likelihood
+                let likelihood = '';
+                let likelihoodClass = '';
+                if (result.transactions >= 30000 && result.transactions <= 70000 && 
+                    result.volume >= 1000000 && result.volume <= 2500000) {
+                    likelihood = '✓ Likely';
+                    likelihoodClass = 'text-green-600 bg-green-50';
+                } else if (result.transactions < 20000 || result.transactions > 100000) {
+                    likelihood = '✗ Unlikely';
+                    likelihoodClass = 'text-red-600 bg-red-50';
+                } else {
+                    likelihood = '? Possible';
+                    likelihoodClass = 'text-yellow-600 bg-yellow-50';
+                }
+                
+                return `
+                    <tr class="${scenario.highlight ? 'bg-blue-50' : ''}">
+                        <td class="px-4 py-3 font-medium text-gray-800">${scenario.name}</td>
+                        <td class="px-4 py-3 text-right">${formatCurrency(scenario.avgTicket)}</td>
+                        <td class="px-4 py-3 text-right font-semibold">${formatNumber(result.transactions)}</td>
+                        <td class="px-4 py-3 text-right font-semibold">${formatCurrency(result.volume)}</td>
+                        <td class="px-4 py-3 text-right">${formatCurrency(percentPortion)}</td>
+                        <td class="px-4 py-3 text-right">${formatCurrency(txPortion)}</td>
+                        <td class="px-4 py-3 text-right">${effectiveRate.toFixed(2)}%</td>
+                        <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded text-xs font-medium ${likelihoodClass}">${likelihood}</span></td>
+                    </tr>
+                `;
+            }).join('');
+            
+            updateCharts(inputs);
+            solveForTransactions();
+            solveForVolume();
+            updateCopayAnalysis();
+            updateAnnualProjection(inputs);
+        }
+
+        function updateCharts(inputs) {
+            // Generate data points for the tradeoff chart
+            const dataPoints = [];
+            for (let avgTicket = 20; avgTicket <= 100; avgTicket += 5) {
+                const result = solveForAvgTicket(avgTicket, inputs);
+                if (result.transactions > 0 && result.volume > 0) {
+                    dataPoints.push({
+                        x: result.transactions,
+                        y: result.volume,
+                        avgTicket: avgTicket
+                    });
+                }
+            }
+            
+            // Tradeoff Chart
+            const ctx1 = document.getElementById('tradeoffChart').getContext('2d');
+            if (tradeoffChart) tradeoffChart.destroy();
+            
+            tradeoffChart = new Chart(ctx1, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Valid Combinations',
+                        data: dataPoints,
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#2563eb',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return [
+                                        `Transactions: ${formatNumber(point.x)}`,
+                                        `Volume: ${formatCurrency(point.y)}`,
+                                        `Avg Ticket: ${formatCurrency(point.avgTicket)}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Transactions' },
+                            ticks: { callback: v => formatNumber(v) }
+                        },
+                        y: {
+                            title: { display: true, text: 'Volume ($)' },
+                            ticks: { callback: v => formatCurrency(v) }
+                        }
+                    }
+                }
+            });
+            
+            // Composition Chart - using 90% copay scenario as example
+            const scenario90 = solveForAvgTicket(47.5, inputs); // 90% copay mix
+            const percentPortion = scenario90.volume * inputs.percentRate;
+            const txPortion = scenario90.transactions * inputs.perTxFee;
+            
+            const ctx2 = document.getElementById('compositionChart').getContext('2d');
+            if (compositionChart) compositionChart.destroy();
+            
+            compositionChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Percentage Fee (3.5%)', 'Per-Transaction Fee ($0.30)'],
+                    datasets: [{
+                        data: [percentPortion, txPortion],
+                        backgroundColor: ['#3b82f6', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percent = ((value / total) * 100).toFixed(1);
+                                    return `${context.label}: ${formatCurrency(value)} (${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function solveForTransactions() {
+            const inputs = getInputs();
+            const volume = parseFloat(document.getElementById('knownVolume').value) || 0;
+            const transactions = solveGivenVolume(volume, inputs);
+            
+            document.getElementById('solvedTransactions').textContent = formatNumber(transactions);
+            document.getElementById('solvedAvgTicket1').textContent = formatCurrency(volume / transactions);
+            
+            // Highlight if unrealistic
+            const el = document.getElementById('solvedTransactions');
+            if (transactions < 0) {
+                el.classList.add('text-red-600');
+                el.textContent = 'Invalid (volume too high)';
+            } else {
+                el.classList.remove('text-red-600');
+            }
+        }
+
+        function solveForVolume() {
+            const inputs = getInputs();
+            const transactions = parseFloat(document.getElementById('knownTransactions').value) || 0;
+            const volume = solveGivenTransactions(transactions, inputs);
+            
+            document.getElementById('solvedVolume').textContent = formatCurrency(volume);
+            document.getElementById('solvedAvgTicket2').textContent = formatCurrency(volume / transactions);
+            
+            // Highlight if unrealistic
+            const el = document.getElementById('solvedVolume');
+            if (volume < 0) {
+                el.classList.add('text-red-600');
+                el.textContent = 'Invalid (too many transactions)';
+            } else {
+                el.classList.remove('text-red-600');
+            }
+        }
+
+        function updateCopayAnalysis() {
+            const inputs = getInputs();
+            const copayAmt = parseFloat(document.getElementById('copayAmt').value) || 25;
+            const fullChargeAmt = parseFloat(document.getElementById('fullChargeAmt').value) || 250;
+            const copayPercent = parseInt(document.getElementById('copayMixSlider').value) / 100;
+            
+            document.getElementById('copayMixLabel').textContent = `${Math.round(copayPercent * 100)}% Copay / ${Math.round((1 - copayPercent) * 100)}% Full`;
+            
+            const avgTicket = (copayAmt * copayPercent) + (fullChargeAmt * (1 - copayPercent));
+            const result = solveForAvgTicket(avgTicket, inputs);
+            
+            const copayTx = result.transactions * copayPercent;
+            const fullTx = result.transactions * (1 - copayPercent);
+            const copayVolume = copayTx * copayAmt;
+            const fullVolume = fullTx * fullChargeAmt;
+            
+            document.getElementById('copayResults').innerHTML = `
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                    <div class="text-xs text-gray-500">Total Transactions</div>
+                    <div class="text-xl font-bold text-gray-800">${formatNumber(result.transactions)}</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                    <div class="text-xs text-gray-500">Total Volume</div>
+                    <div class="text-xl font-bold text-gray-800">${formatCurrency(result.volume)}</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                    <div class="text-xs text-gray-500">Copay Transactions</div>
+                    <div class="text-xl font-bold text-blue-600">${formatNumber(copayTx)}</div>
+                    <div class="text-xs text-gray-400">${formatCurrency(copayVolume)} volume</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                    <div class="text-xs text-gray-500">Full Charge Transactions</div>
+                    <div class="text-xl font-bold text-green-600">${formatNumber(fullTx)}</div>
+                    <div class="text-xs text-gray-400">${formatCurrency(fullVolume)} volume</div>
+                </div>
+            `;
+        }
+
+        function updateAnnualProjection(inputs) {
+            const annualMultiplier = 12 / inputs.timePeriod;
+            const annualFees = inputs.totalFees * annualMultiplier;
+            
+            // Use 90% copay mix as baseline estimate
+            const avgTicket = 25 * 0.90 + 250 * 0.10; // ~47.5
+            const result = solveForAvgTicket(avgTicket, inputs);
+            
+            const annualVolume = result.volume * annualMultiplier;
+            const annualTx = result.transactions * annualMultiplier;
+            const effectiveRate = annualFees / annualVolume * 100;
+            
+            document.getElementById('annualFees').textContent = formatCurrency(annualFees);
+            document.getElementById('annualVolume').textContent = formatCurrency(annualVolume);
+            document.getElementById('annualTx').textContent = formatNumber(annualTx);
+            document.getElementById('annualRate').textContent = effectiveRate.toFixed(2) + '%';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAnalysis();
+        });
+    </script>
+</body>
+</html>

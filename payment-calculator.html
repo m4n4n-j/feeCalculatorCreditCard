@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Payment Processing Cost Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: none;
+        }
+        .provider-card {
+            transition: all 0.3s ease;
+        }
+        .provider-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .best-option {
+            border: 2px solid #10b981;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Healthcare Payment Processing Calculator</h1>
+            <p class="text-gray-600">Compare providers and optimize your payment processing costs</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                </svg>
+                Transaction Parameters
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Total Annual Volume -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Total Annual Volume</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2 text-gray-500">$</span>
+                        <input type="number" id="totalVolume" value="1300000" 
+                            class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onchange="updateCalculations()">
+                    </div>
+                </div>
+
+                <!-- Total Transactions -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Total Annual Transactions</label>
+                    <input type="number" id="totalTransactions" value="40000" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onchange="updateCalculations()">
+                </div>
+
+                <!-- Average Ticket Display -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Average Ticket Size</label>
+                    <div class="px-4 py-2 bg-gray-100 rounded-lg font-semibold text-gray-800" id="avgTicketDisplay">$32.50</div>
+                </div>
+            </div>
+
+            <!-- Transaction Mix Sliders -->
+            <div class="mt-8 space-y-6">
+                <h3 class="text-lg font-medium text-gray-800">Transaction Mix</h3>
+                
+                <!-- Copay vs Full Charge -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm font-medium text-gray-700">Copay ($25 avg) vs Full Charge ($250 avg)</label>
+                        <span class="text-sm text-gray-500" id="copayMixLabel">90% Copay / 10% Full</span>
+                    </div>
+                    <input type="range" id="copayPercent" min="0" max="100" value="90" 
+                        class="slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        oninput="updateCalculations()">
+                    <div class="flex justify-between text-xs text-gray-500">
+                        <span>0% Copay</span>
+                        <span>100% Copay</span>
+                    </div>
+                </div>
+
+                <!-- Credit vs Debit -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm font-medium text-gray-700">Credit Card vs Debit Card</label>
+                        <span class="text-sm text-gray-500" id="creditMixLabel">85% Credit / 15% Debit</span>
+                    </div>
+                    <input type="range" id="creditPercent" min="0" max="100" value="85" 
+                        class="slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        oninput="updateCalculations()">
+                    <div class="flex justify-between text-xs text-gray-500">
+                        <span>0% Credit (All Debit)</span>
+                        <span>100% Credit</span>
+                    </div>
+                </div>
+
+                <!-- Copay Amount -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Average Copay Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2 text-gray-500">$</span>
+                            <input type="number" id="copayAmount" value="25" 
+                                class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateCalculations()">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Average Full Charge Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2 text-gray-500">$</span>
+                            <input type="number" id="fullChargeAmount" value="250" 
+                                class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="updateCalculations()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Provider Comparison Cards -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Provider Comparison
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="providerCards">
+                <!-- Cards will be generated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Detailed Breakdown -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Cost Breakdown Chart -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Annual Cost Comparison</h3>
+                <canvas id="costChart"></canvas>
+            </div>
+
+            <!-- Savings Summary -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Savings vs Current Provider (eClinicalWorks)</h3>
+                <div class="space-y-4" id="savingsSummary">
+                    <!-- Generated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Breakdown Table -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Detailed Transaction Breakdown</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Metric</th>
+                            <th class="px-4 py-3 text-right font-medium text-gray-600">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="breakdownTable" class="divide-y divide-gray-200">
+                        <!-- Generated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Custom Provider Input -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Add Custom Provider Quote
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Provider Name</label>
+                    <input type="text" id="customName" placeholder="e.g., New Provider"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Monthly Fee ($)</label>
+                    <input type="number" id="customMonthly" placeholder="20" step="0.01"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Markup Rate (%)</label>
+                    <input type="number" id="customMarkup" placeholder="0.10" step="0.01"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Per-Transaction ($)</label>
+                    <input type="number" id="customPerTx" placeholder="0.08" step="0.01"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">&nbsp;</label>
+                    <button onclick="addCustomProvider()" 
+                        class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        Add Provider
+                    </button>
+                </div>
+            </div>
+            <div id="customProvidersList" class="mt-4 space-y-2"></div>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
+            <h3 class="text-xl font-semibold mb-2">💡 Recommendation</h3>
+            <p class="text-green-100 mb-4" id="recommendation">
+                Based on your transaction profile, switching to Dharma Merchant Services would save you approximately $28,000 annually.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="bg-white/20 rounded-lg p-4">
+                    <div class="text-2xl font-bold" id="recSavings">$28,010</div>
+                    <div class="text-green-100 text-sm">Annual Savings</div>
+                </div>
+                <div class="bg-white/20 rounded-lg p-4">
+                    <div class="text-2xl font-bold" id="recPercent">49%</div>
+                    <div class="text-green-100 text-sm">Cost Reduction</div>
+                </div>
+                <div class="bg-white/20 rounded-lg p-4">
+                    <div class="text-2xl font-bold" id="recEffective">2.21%</div>
+                    <div class="text-green-100 text-sm">New Effective Rate</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Provider definitions
+        let providers = [
+            {
+                name: "eClinicalWorks (Current)",
+                model: "Flat Rate",
+                monthlyFee: 0,
+                markupPercent: 3.5,
+                perTransaction: 0.30,
+                isInterchangePlus: false,
+                color: "#ef4444",
+                isCurrent: true
+            },
+            {
+                name: "Dharma",
+                model: "Interchange+",
+                monthlyFee: 20,
+                markupPercent: 0.10,
+                perTransaction: 0.08,
+                isInterchangePlus: true,
+                color: "#10b981"
+            },
+            {
+                name: "Stax",
+                model: "Subscription",
+                monthlyFee: 199,
+                markupPercent: 0,
+                perTransaction: 0.15,
+                isInterchangePlus: true,
+                color: "#3b82f6"
+            },
+            {
+                name: "Helcim",
+                model: "Interchange+",
+                monthlyFee: 0,
+                markupPercent: 0.35,
+                perTransaction: 0.20,
+                isInterchangePlus: true,
+                color: "#8b5cf6"
+            },
+            {
+                name: "Square",
+                model: "Flat Rate",
+                monthlyFee: 0,
+                markupPercent: 3.5,
+                perTransaction: 0.15,
+                isInterchangePlus: false,
+                color: "#f59e0b"
+            },
+            {
+                name: "Stripe",
+                model: "Flat Rate",
+                monthlyFee: 0,
+                markupPercent: 2.9,
+                perTransaction: 0.30,
+                isInterchangePlus: false,
+                color: "#6366f1"
+            }
+        ];
+
+        let customProviders = [];
+        let costChart = null;
+
+        // Interchange rates
+        const INTERCHANGE_CREDIT_CNP = 0.0185; // 1.85% average for credit CNP
+        const INTERCHANGE_DEBIT_CNP = 0.0055;  // 0.55% average for debit CNP (regulated)
+        const ASSESSMENT_FEE = 0.0014; // ~0.14% card brand assessment fees
+
+        function getInputValues() {
+            return {
+                totalVolume: parseFloat(document.getElementById('totalVolume').value) || 0,
+                totalTransactions: parseInt(document.getElementById('totalTransactions').value) || 0,
+                copayPercent: parseInt(document.getElementById('copayPercent').value) / 100,
+                creditPercent: parseInt(document.getElementById('creditPercent').value) / 100,
+                copayAmount: parseFloat(document.getElementById('copayAmount').value) || 25,
+                fullChargeAmount: parseFloat(document.getElementById('fullChargeAmount').value) || 250
+            };
+        }
+
+        function calculateBlendedInterchange(creditPercent) {
+            const creditInterchange = INTERCHANGE_CREDIT_CNP;
+            const debitInterchange = INTERCHANGE_DEBIT_CNP;
+            return (creditPercent * creditInterchange) + ((1 - creditPercent) * debitInterchange) + ASSESSMENT_FEE;
+        }
+
+        function calculateProviderCost(provider, inputs) {
+            const { totalVolume, totalTransactions, creditPercent } = inputs;
+            const blendedInterchange = calculateBlendedInterchange(creditPercent);
+            
+            let annualCost = 0;
+            
+            // Monthly fees
+            annualCost += provider.monthlyFee * 12;
+            
+            // Per-transaction fees
+            annualCost += totalTransactions * provider.perTransaction;
+            
+            if (provider.isInterchangePlus) {
+                // Interchange + markup
+                annualCost += totalVolume * blendedInterchange;
+                annualCost += totalVolume * (provider.markupPercent / 100);
+            } else {
+                // Flat rate
+                annualCost += totalVolume * (provider.markupPercent / 100);
+            }
+            
+            return annualCost;
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatPercent(decimal) {
+            return (decimal * 100).toFixed(2) + '%';
+        }
+
+        function updateCalculations() {
+            const inputs = getInputValues();
+            
+            // Update labels
+            document.getElementById('copayMixLabel').textContent = 
+                `${Math.round(inputs.copayPercent * 100)}% Copay / ${Math.round((1 - inputs.copayPercent) * 100)}% Full`;
+            document.getElementById('creditMixLabel').textContent = 
+                `${Math.round(inputs.creditPercent * 100)}% Credit / ${Math.round((1 - inputs.creditPercent) * 100)}% Debit`;
+            
+            // Calculate average ticket
+            const avgTicket = inputs.totalTransactions > 0 ? inputs.totalVolume / inputs.totalTransactions : 0;
+            document.getElementById('avgTicketDisplay').textContent = formatCurrency(avgTicket);
+            
+            // Calculate costs for all providers
+            const allProviders = [...providers, ...customProviders];
+            const costs = allProviders.map(p => ({
+                ...p,
+                cost: calculateProviderCost(p, inputs),
+                effectiveRate: calculateProviderCost(p, inputs) / inputs.totalVolume
+            }));
+            
+            // Sort by cost
+            costs.sort((a, b) => a.cost - b.cost);
+            
+            // Find current provider cost
+            const currentCost = costs.find(c => c.isCurrent)?.cost || costs[costs.length - 1].cost;
+            const bestOption = costs[0];
+            
+            // Update provider cards
+            updateProviderCards(costs, currentCost);
+            
+            // Update chart
+            updateChart(costs);
+            
+            // Update savings summary
+            updateSavingsSummary(costs, currentCost);
+            
+            // Update breakdown table
+            updateBreakdownTable(inputs, costs);
+            
+            // Update recommendation
+            updateRecommendation(bestOption, currentCost, inputs.totalVolume);
+        }
+
+        function updateProviderCards(costs, currentCost) {
+            const container = document.getElementById('providerCards');
+            const bestCost = costs[0].cost;
+            
+            container.innerHTML = costs.map((provider, index) => {
+                const savings = currentCost - provider.cost;
+                const savingsPercent = (savings / currentCost) * 100;
+                const isBest = index === 0 && !provider.isCurrent;
+                const isCurrent = provider.isCurrent;
+                
+                return `
+                    <div class="provider-card bg-white rounded-lg shadow p-5 ${isBest ? 'best-option' : ''} ${isCurrent ? 'border-2 border-red-300 bg-red-50' : ''}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="font-semibold text-gray-800">${provider.name}</h4>
+                                <span class="text-xs px-2 py-1 rounded-full ${isCurrent ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}">${provider.model}</span>
+                            </div>
+                            ${isBest ? '<span class="text-xs px-2 py-1 bg-green-500 text-white rounded-full">BEST</span>' : ''}
+                            ${isCurrent ? '<span class="text-xs px-2 py-1 bg-red-500 text-white rounded-full">CURRENT</span>' : ''}
+                        </div>
+                        <div class="text-2xl font-bold ${isCurrent ? 'text-red-600' : 'text-gray-900'} mb-1">${formatCurrency(provider.cost)}</div>
+                        <div class="text-sm text-gray-500 mb-3">Effective rate: ${formatPercent(provider.effectiveRate)}</div>
+                        ${!isCurrent ? `
+                            <div class="text-sm ${savings > 0 ? 'text-green-600' : 'text-red-600'}">
+                                ${savings > 0 ? '↓' : '↑'} ${formatCurrency(Math.abs(savings))} (${Math.abs(savingsPercent).toFixed(1)}%)
+                            </div>
+                        ` : '<div class="text-sm text-red-600">Your current cost</div>'}
+                        <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                            <div>Monthly: $${provider.monthlyFee}</div>
+                            <div>Markup: ${provider.markupPercent}%${provider.isInterchangePlus ? ' + IC' : ''}</div>
+                            <div>Per-tx: $${provider.perTransaction.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateChart(costs) {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            
+            if (costChart) {
+                costChart.destroy();
+            }
+            
+            costChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: costs.map(c => c.name),
+                    datasets: [{
+                        label: 'Annual Cost',
+                        data: costs.map(c => c.cost),
+                        backgroundColor: costs.map(c => c.color + '80'),
+                        borderColor: costs.map(c => c.color),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSavingsSummary(costs, currentCost) {
+            const container = document.getElementById('savingsSummary');
+            
+            const nonCurrentCosts = costs.filter(c => !c.isCurrent);
+            
+            container.innerHTML = nonCurrentCosts.map(provider => {
+                const savings = currentCost - provider.cost;
+                const savingsPercent = (savings / currentCost) * 100;
+                const isPositive = savings > 0;
+                
+                return `
+                    <div class="flex items-center justify-between p-3 rounded-lg ${isPositive ? 'bg-green-50' : 'bg-red-50'}">
+                        <div>
+                            <div class="font-medium text-gray-800">${provider.name}</div>
+                            <div class="text-sm text-gray-500">${formatCurrency(provider.cost)}/year</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}">
+                                ${isPositive ? '+' : ''}${formatCurrency(savings)}
+                            </div>
+                            <div class="text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}">
+                                ${isPositive ? '↓' : '↑'} ${Math.abs(savingsPercent).toFixed(1)}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateBreakdownTable(inputs, costs) {
+            const container = document.getElementById('breakdownTable');
+            const blendedInterchange = calculateBlendedInterchange(inputs.creditPercent);
+            
+            // Calculate transaction breakdown
+            const copayTx = Math.round(inputs.totalTransactions * inputs.copayPercent);
+            const fullTx = inputs.totalTransactions - copayTx;
+            const copayVolume = copayTx * inputs.copayAmount;
+            const fullVolume = fullTx * inputs.fullChargeAmount;
+            
+            const rows = [
+                ['Total Annual Volume', formatCurrency(inputs.totalVolume)],
+                ['Total Transactions', inputs.totalTransactions.toLocaleString()],
+                ['Average Ticket Size', formatCurrency(inputs.totalVolume / inputs.totalTransactions)],
+                ['---', '---'],
+                ['Copay Transactions', `${copayTx.toLocaleString()} (${Math.round(inputs.copayPercent * 100)}%)`],
+                ['Copay Volume', formatCurrency(copayVolume)],
+                ['Full Charge Transactions', `${fullTx.toLocaleString()} (${Math.round((1 - inputs.copayPercent) * 100)}%)`],
+                ['Full Charge Volume', formatCurrency(fullVolume)],
+                ['---', '---'],
+                ['Credit Card Mix', `${Math.round(inputs.creditPercent * 100)}%`],
+                ['Debit Card Mix', `${Math.round((1 - inputs.creditPercent) * 100)}%`],
+                ['Blended Interchange Rate', formatPercent(blendedInterchange)],
+                ['---', '---'],
+                ['Current Cost (eCW)', formatCurrency(costs.find(c => c.isCurrent)?.cost || 0)],
+                ['Best Option Cost', formatCurrency(costs[0].cost)],
+                ['Potential Savings', formatCurrency((costs.find(c => c.isCurrent)?.cost || 0) - costs[0].cost)]
+            ];
+            
+            container.innerHTML = rows.map(([label, value]) => {
+                if (label === '---') {
+                    return '<tr><td colspan="2" class="border-b border-gray-300"></td></tr>';
+                }
+                return `
+                    <tr>
+                        <td class="px-4 py-2 text-gray-600">${label}</td>
+                        <td class="px-4 py-2 text-right font-medium text-gray-800">${value}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateRecommendation(bestOption, currentCost, totalVolume) {
+            const savings = currentCost - bestOption.cost;
+            const savingsPercent = (savings / currentCost) * 100;
+            
+            document.getElementById('recommendation').textContent = 
+                `Based on your transaction profile, switching to ${bestOption.name} would save you approximately ${formatCurrency(savings)} annually (${savingsPercent.toFixed(0)}% reduction). Your effective rate would drop from ${formatPercent(currentCost / totalVolume)} to ${formatPercent(bestOption.effectiveRate)}.`;
+            
+            document.getElementById('recSavings').textContent = formatCurrency(savings);
+            document.getElementById('recPercent').textContent = savingsPercent.toFixed(0) + '%';
+            document.getElementById('recEffective').textContent = formatPercent(bestOption.effectiveRate);
+        }
+
+        function addCustomProvider() {
+            const name = document.getElementById('customName').value;
+            const monthlyFee = parseFloat(document.getElementById('customMonthly').value) || 0;
+            const markupPercent = parseFloat(document.getElementById('customMarkup').value) || 0;
+            const perTransaction = parseFloat(document.getElementById('customPerTx').value) || 0;
+            
+            if (!name) {
+                alert('Please enter a provider name');
+                return;
+            }
+            
+            const customProvider = {
+                name: name,
+                model: "Custom Quote",
+                monthlyFee: monthlyFee,
+                markupPercent: markupPercent,
+                perTransaction: perTransaction,
+                isInterchangePlus: true,
+                color: '#' + Math.floor(Math.random()*16777215).toString(16),
+                isCustom: true
+            };
+            
+            customProviders.push(customProvider);
+            
+            // Clear inputs
+            document.getElementById('customName').value = '';
+            document.getElementById('customMonthly').value = '';
+            document.getElementById('customMarkup').value = '';
+            document.getElementById('customPerTx').value = '';
+            
+            // Update list
+            updateCustomProvidersList();
+            
+            // Recalculate
+            updateCalculations();
+        }
+
+        function updateCustomProvidersList() {
+            const container = document.getElementById('customProvidersList');
+            container.innerHTML = customProviders.map((p, i) => `
+                <div class="flex items-center justify-between p-2 bg-purple-50 rounded-lg">
+                    <span class="text-sm text-purple-800">${p.name}: $${p.monthlyFee}/mo + ${p.markupPercent}% + $${p.perTransaction.toFixed(2)}/tx</span>
+                    <button onclick="removeCustomProvider(${i})" class="text-red-500 hover:text-red-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeCustomProvider(index) {
+            customProviders.splice(index, 1);
+            updateCustomProvidersList();
+            updateCalculations();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCalculations();
+        });
+    </script>
+</body>
+</html>
