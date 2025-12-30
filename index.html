@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Tools Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="ml-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
+                        PaymentTools
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <!-- Header -->
+        <div class="mb-12 text-center">
+            <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl mb-4">
+                Financial Analysis Suite
+            </h1>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                Access your payment processing calculators and analysis tools in one place.
+            </p>
+        </div>
+
+        <!-- Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+
+            <!-- Card 1 -->
+            <a href="payment-calculator.html" class="group block p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-center w-12 h-12 bg-indigo-50 rounded-xl mb-6 group-hover:bg-indigo-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors">Payment Calculator</h2>
+                <p class="text-slate-600">
+                    Calculate processing fees, net amounts, and break-even points for various payment methods.
+                </p>
+            </a>
+
+            <!-- Card 2 -->
+            <a href="fee-reverse-analysis.html" class="group block p-8 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-center w-12 h-12 bg-violet-50 rounded-xl mb-6 group-hover:bg-violet-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-violet-600 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 group-hover:text-violet-600 transition-colors">Reverse Fee Analysis</h2>
+                <p class="text-slate-600">
+                    Analyze fee structures backwards to understand the breakdown of charges and net settlements.
+                </p>
+            </a>
+
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center text-slate-500 text-sm">
+        <p>&copy; 2025 PaymentTools. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
